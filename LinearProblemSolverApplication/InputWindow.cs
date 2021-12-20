@@ -310,8 +310,21 @@ namespace LinearProblemSolverApplication
                 MessageBox.Show("Неправильно заполнены данные");
                 return;
             }
-            
-            var solveWindow = new SolveWindow(problem, DecimalNumbers.Checked);
+
+            var cloneProblem = problem.Clone();
+
+            for (int i = 0; i < cloneProblem.Restrictions.Length; ++i)
+            {
+                if (cloneProblem.Restrictions[i].Last() < 0)
+                {
+                    for (int j = 0; j < cloneProblem.Restrictions[i].Length; ++j)
+                    {
+                        cloneProblem.Restrictions[i][j] = -cloneProblem.Restrictions[i][j];
+                    }
+                }
+            }
+
+            var solveWindow = new SolveWindow(cloneProblem, DecimalNumbers.Checked);
             solveWindow.Owner = this;
             solveWindow.ShowDialog();
         }

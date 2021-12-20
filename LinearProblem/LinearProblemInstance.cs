@@ -19,20 +19,20 @@ namespace LinearProblem
         private Rational[] aimFunction = null;
         private LinearProblemType? problemType = null;
         private bool useUserBasis;
-        private Rational[] basis = null;
+        private int[] basis = null;
         
         
         public LinearProblemInstance()
         {
 
         }
-        public LinearProblemInstance(Rational[][] restrMartix, Rational[] aimFunction, LinearProblemType problemType)
+        public LinearProblemInstance(Rational[][] restrMartix, Rational[] aimFunction, LinearProblemType? problemType)
         {
             this.restrMartix = restrMartix;
             this.aimFunction = aimFunction;
             this.problemType = problemType;
         }
-        public LinearProblemInstance(Rational[][] restrMartix, Rational[] aimFunction, LinearProblemType problemType, Rational[] basis)
+        public LinearProblemInstance(Rational[][] restrMartix, Rational[] aimFunction, LinearProblemType? problemType, int[] basis)
         {
             this.restrMartix = restrMartix;
             this.aimFunction = aimFunction;
@@ -55,7 +55,7 @@ namespace LinearProblem
             get { return problemType; }
             set { problemType = value; }
         }
-        public Rational[] Basis
+        public int[] Basis
         {
             get { return basis; }
             set { basis = value; }
@@ -64,6 +64,15 @@ namespace LinearProblem
         {
             get { return useUserBasis; }
             set { useUserBasis = value; }
+        }
+
+        public LinearProblemInstance Clone()
+        {
+            var basis = this.basis != null ? (int[])this.basis.Clone() : null;
+            var restrMatr = (Rational[][])this.restrMartix.Clone();
+            var aim = (Rational[])this.aimFunction;
+            
+            return new LinearProblemInstance(restrMatr, aim, problemType, basis);
         }
     }
 }
