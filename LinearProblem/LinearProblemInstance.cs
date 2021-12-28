@@ -65,14 +65,26 @@ namespace LinearProblem
             get { return useUserBasis; }
             set { useUserBasis = value; }
         }
-
         public LinearProblemInstance Clone()
         {
             var basis = this.basis != null ? (int[])this.basis.Clone() : null;
-            var restrMatr = (Rational[][])this.restrMartix.Clone();
-            var aim = (Rational[])this.aimFunction;
+            var restrMatr = (Rational[][])restrMartix.Clone();
+            var aim = (Rational[])aimFunction.Clone();
             
             return new LinearProblemInstance(restrMatr, aim, problemType, basis);
+        }
+        public bool IsMinimiseProblem()
+        {
+            return ProblemType == LinearProblemType.Minimise;
+        }
+        public List<Rational> GetMinimiseAimFunction()
+        {
+            var res = AimFunction.ToList();
+
+            if (!IsMinimiseProblem())
+                res = res.Select(c => -c).ToList();
+
+            return res;
         }
     }
 }

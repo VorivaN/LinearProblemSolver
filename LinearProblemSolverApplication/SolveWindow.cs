@@ -21,19 +21,16 @@ namespace LinearProblemSolverApplication
         string startProblemString = "";
         string problemConclusionString = "";
 
-
-        LinearProblemSolver problemSolver = null;
-
-        List<SymplexTable> history = new List<SymplexTable>();
         SymplexTable currentSymplexTable = null;
-
+        List<SymplexTable> history = new List<SymplexTable>();
         List<KeyValuePair<int, int>> baseElements = new List<KeyValuePair<int, int>>();
 
 
+        LinearProblemInstance problem = null;
         bool convertToDecimal;
         public SolveWindow(LinearProblemInstance problem, bool convertToDecimal)
         {
-            this.problemSolver = new LinearProblemSolver(problem);
+            this.problem = problem;
             this.convertToDecimal = convertToDecimal;
             InitializeComponent();
         }
@@ -45,20 +42,17 @@ namespace LinearProblemSolverApplication
 
             if (BasisRadioButton.Checked)
             {
-                currentSymplexTable = problemSolver.BuildFirstBasisTable();
+                currentSymplexTable = SymplexTable.BuildFirstBasisTable(problem);
                 AddNewStep(currentSymplexTable);
             }
 
             //problemSolver.GetBasisSolveHistory();
         }
-
         void AddNewStep(SymplexTable table)
         {
             history.Add(currentSymplexTable);
             UpdateForm();
         }
-
-
         void UpdateConclusionTextBox()
         {
             if (!baseElements.Any())
@@ -87,6 +81,7 @@ namespace LinearProblemSolverApplication
                     problemConclusionString = "Ответ на задачу найден";
 
                     Rational f0 = -currentSymplexTable.table[currentSymplexTable.table.Length - 1][currentSymplexTable.table[0].Length - 1];
+                    if (!problem.IsMinimiseProblem()) f0 = -f0;
 
                     List<Rational> x = new List<Rational>();
                     for (int i = 0; i < currentSymplexTable.table.Length + currentSymplexTable.table[0].Length - 2; ++i)
@@ -101,12 +96,15 @@ namespace LinearProblemSolverApplication
 
                     if (convertToDecimal) problemConclusionString += string.Format("\r\nf({0})={1}", string.Join(",", x.Select(c => (double)c)), (double)f0);
                     else problemConclusionString += string.Format("\r\nf({0})={1}", string.Join(",", x), f0);
+
+                    if (currentSymplexTable.nonBasisVariables.Length == 2)
+                        GraphicsButton.Enabled = true;
                 }
             }
             else
             {
                 if (BasisRadioButton.Checked) basisConclusionString = "";
-                if (SymplexRadioButton.Checked)  problemConclusionString = "";
+                if (SymplexRadioButton.Checked) problemConclusionString = "";
             }
             ConclusionTextBox.Text = string.Join("\r\n", new[] { startBasisString, basisConclusionString, startProblemString, problemConclusionString });
         }
@@ -121,8 +119,6 @@ namespace LinearProblemSolverApplication
             UpdateButtons();
             UpdateConclusionTextBox();
         }
-
-
         void ColorBaseElements()
         {
             foreach (DataGridViewRow row in dataGridView.Rows)
@@ -138,7 +134,6 @@ namespace LinearProblemSolverApplication
                 dataGridView.Rows[baseElem.Key].Cells[baseElem.Value].Style.BackColor = Color.Aqua;
             }
         }
-
         void FillFormFromTable(SymplexTable table)
         {
             dataGridView.Rows.Clear();
@@ -169,10 +164,11 @@ namespace LinearProblemSolverApplication
             }
             dataGridView.ClearSelection();
         }
-
         private void UpdateButtons()
         {
             SolveProblem.Enabled = false;
+            GraphicsButton.Enabled = false;
+
             if (history.Count > 1)
             {
                 PrevStep.Enabled = true;
@@ -195,8 +191,6 @@ namespace LinearProblemSolverApplication
                 LastStep.Enabled = false;
             }
         }
-
-
         private void NextStep_Click(object sender, EventArgs e)
         {
 
@@ -218,20 +212,17 @@ namespace LinearProblemSolverApplication
             currentSymplexTable = currentSymplexTable.NextStep(selectedCell.RowIndex, selectedCell.ColumnIndex);
             AddNewStep(currentSymplexTable);
         }
-
         private void AddColumn(DataGridView grid, string name)
         {
             int addedCol = grid.Columns.Add(name, name);
             grid.Columns[addedCol].SortMode = DataGridViewColumnSortMode.NotSortable;
         }
-
         private void PrevStep_Click(object sender, EventArgs e)
         {
             history.Remove(history.Last());
             currentSymplexTable = history.Last();
             UpdateForm();
         }
-
         private void FirstStep_Click(object sender, EventArgs e)
         {
             while (history.Count > 1)
@@ -239,7 +230,6 @@ namespace LinearProblemSolverApplication
                 PrevStep_Click(sender, e);
             }
         }
-
         private void LastStep_Click(object sender, EventArgs e)
         {
             while (baseElements.Any())
@@ -250,21 +240,15 @@ namespace LinearProblemSolverApplication
             }
             UpdateForm();
         }
-
         private void ConclusionTextBox_Enter(object sender, EventArgs e)
         {
             panel1.Focus();
         }
-
-        private void SolveProblem_Click(object sender, EventArgs e)
+        private void BuildNewSymplexTable()
         {
-            BasisRadioButton.Checked = false;
-            SymplexRadioButton.Checked = true;
-            UpdateConclusionTextBox();
-
             history.Clear();
 
-            var aimFunction = problemSolver.GetMinimiseAimFunction();
+            var aimFunction = problem.GetMinimiseAimFunction();
 
             var basis = (int[])currentSymplexTable.basisVariables.Clone();
             var nonBasis = ((int[])currentSymplexTable.nonBasisVariables.Clone()).Where(c => c < aimFunction.Count()).ToArray();
@@ -287,9 +271,9 @@ namespace LinearProblemSolverApplication
             }
 
             for (int i = 0; i < table[0].Length; ++i)
-               table[table.Length - 1][i] = new Rational(0);
+                table[table.Length - 1][i] = new Rational(0);
 
-            
+
             for (int i = 0; i < aimFunction.Count() - 1; ++i)
             {
                 if (basis.Contains(i + 1))
@@ -314,8 +298,21 @@ namespace LinearProblemSolverApplication
             currentSymplexTable = new SymplexTable(basis, nonBasis, table);
 
             history.Add(currentSymplexTable);
-
+        }
+        private void SolveProblem_Click(object sender, EventArgs e)
+        {
+            BasisRadioButton.Checked = false;
+            SymplexRadioButton.Checked = true;
+            UpdateConclusionTextBox();
+            BuildNewSymplexTable();
             UpdateForm();
+        }
+
+        private void GraphicsButton_Click(object sender, EventArgs e)
+        {
+            var graphWindow = new GraphicWindow(currentSymplexTable, problem);
+            graphWindow.Owner = this;
+            graphWindow.ShowDialog();
         }
     }
 }
