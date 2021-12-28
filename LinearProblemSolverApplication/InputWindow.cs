@@ -20,20 +20,15 @@ namespace LinearProblemSolverApplication
         private LinearProblemInstance problem = null;
         public InputWindow()
         {
-            /*var table = new [] {
-                new[] { new Rational(1), new Rational(1), new Rational(1) },
-            new[] { new Rational(0), new Rational(1), new Rational(1) },
-            new[] { new Rational(-1), new Rational(-1), new Rational(1) }};
-
-            var a = new SymplexTable(new [] { "x1", "x2" }, new[] { "x3", "x4" }, table);
-
-            MessageBox.Show(string.Join("\n", a.GetBasisElements()));*/
-
             InitializeComponent();
         }
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Помогает решать задачи линейного программирования.\nАвтор: Воронин Иван ИТ-31");
+            string text = @"                                         ПРЕДУПРЕЖДЕНИЕ
+Данная программа была создана для повышения кармы и оценки на экземене по методам оптимизации.
+Она может решать задачи линейного программирования методом оптимизации и, возможно, графическим методом.
+Также в ней реализован метод искусственного базиса";
+            MessageBox.Show(text);
         }
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
